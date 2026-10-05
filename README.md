@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Library Management System
 
 A PHP 8+ and MySQL starter project organized with a lightweight MVC architecture for Laragon.
@@ -36,3 +37,7 @@ The first account registered becomes the administrator; later registrations crea
 For local member-interface testing, run `database/seed_member_demo.sql` against the development database. It creates a demo member and sample borrows (currently borrowed, due soon, overdue, and returned). The demo sign-in is `member.demo@librarydesk.test` with password `MemberDemo123!`. Do not use the demo account or fixture in a production database.
 
 The first-account bootstrap is intended for initial local setup. Disable public registration or add an invitation workflow before exposing the app to an untrusted network.
+=======
+# LibraryDesk
+A lightweight PHP and MySQL library management system with role-based admin, librarian, and member interfaces for managing users, books, and book borrows and returns. Includes member dashboards, catalogue browsing, borrow history, and responsive mobile navigation.
+>>>>>>> ee3770b738faaa6c12b29a7f7ef787810e72d3c0
