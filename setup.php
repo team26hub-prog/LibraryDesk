@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 $remoteAddress = $_SERVER['REMOTE_ADDR'] ?? '';
-if (!in_array($remoteAddress, ['127.0.0.1', '::1'], true)) {
-    http_response_code(403);
-    exit('Setup is available only from this computer.');
-}
+$isLocal = in_array($remoteAddress, ['127.0.0.1', '::1'], true);
+$env = require __DIR__ . '/config/environment.php';
+$setupToken = $env('SETUP_TOKEN') ?? '';
+$remoteSetupEnabled = strlen($setupToken) >= 32;
 
 session_start();
 if (!isset($_SESSION['_csrf'])) {
@@ -21,6 +21,14 @@ $message = '';
 $messageType = 'error';
 $oldName = '';
 $oldEmail = '';
+$authorized = $isLocal || ($remoteSetupEnabled
+    && is_string($_SESSION['_setup_authorization'] ?? null)
+    && hash_equals(hash('sha256', $setupToken), $_SESSION['_setup_authorization']));
+
+if (!$isLocal && !$remoteSetupEnabled) {
+    http_response_code(403);
+    $message = 'Hosted setup is disabled. Configure a private SETUP_TOKEN of at least 32 characters in the server .env file to enable it.';
+}
 
 $validEmail = static function (string $email): bool {
     if (mb_strlen($email) > 190 || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
@@ -66,6 +74,23 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && !$complete) {
         http_response_code(419);
         exit('The form expired. Refresh the page and try again.');
     }
+
+    if (!$authorized && $remoteSetupEnabled && ($_POST['_setup_action'] ?? '') === 'unlock') {
+        $submittedSetupToken = $_POST['setup_token'] ?? null;
+        if (is_string($submittedSetupToken) && hash_equals($setupToken, $submittedSetupToken)) {
+            session_regenerate_id(true);
+            $_SESSION['_setup_authorization'] = hash('sha256', $setupToken);
+            $authorized = true;
+        } else {
+            http_response_code(403);
+            $message = 'The setup key is incorrect. Use the SETUP_TOKEN configured in the server .env file.';
+        }
+    }
+}
+
+// Unlocking and installation are separate submissions; never install on an unlock request.
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && !$complete && $authorized
+    && ($_POST['_setup_action'] ?? '') === 'install') {
 
     $nameInput = $_POST['name'] ?? null;
     $emailInput = $_POST['email'] ?? null;
@@ -120,25 +145,30 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && !$complete) {
                     throw new RuntimeException('Setup has already completed. Remove setup.php from the web root.');
                 }
 
-                $server->exec(
-                    'CREATE DATABASE IF NOT EXISTS `' . $databaseName . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'
+                $databaseDsn = sprintf(
+                    'mysql:host=%s;port=%s;dbname=%s;charset=%s',
+                    $config['host'],
+                    $config['port'],
+                    $databaseName,
+                    $config['charset']
                 );
-                $database = new PDO(
-                    sprintf(
-                        'mysql:host=%s;port=%s;dbname=%s;charset=%s',
-                        $config['host'],
-                        $config['port'],
-                        $databaseName,
-                        $config['charset']
-                    ),
-                    $config['username'],
-                    $config['password'],
-                    [
-                        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                        PDO::ATTR_EMULATE_PREPARES => false,
-                    ]
-                );
+                $databaseOptions = [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                    PDO::ATTR_EMULATE_PREPARES => false,
+                ];
+                try {
+                    $database = new PDO($databaseDsn, $config['username'], $config['password'], $databaseOptions);
+                } catch (PDOException $exception) {
+                    if ((int) ($exception->errorInfo[1] ?? 0) !== 1049) {
+                        throw $exception;
+                    }
+                    // Local installs may create a database; cPanel databases normally already exist.
+                    $server->exec(
+                        'CREATE DATABASE IF NOT EXISTS `' . $databaseName . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci'
+                    );
+                    $database = new PDO($databaseDsn, $config['username'], $config['password'], $databaseOptions);
+                }
 
                 $existingUsersTable = $database->prepare(
                     "SELECT COUNT(*) FROM information_schema.tables
@@ -188,6 +218,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && !$complete) {
                 }
 
                 $complete = true;
+                unset($_SESSION['_setup_authorization']);
                 $messageType = 'success';
                 $message = 'Setup is complete. Sign in using the administrator account you just created.';
                 $oldName = '';
@@ -199,7 +230,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && !$complete) {
         } catch (PDOException $exception) {
             error_log((string) $exception);
             http_response_code(500);
-            $message = 'Database setup failed. Check the .env database settings and confirm MySQL is running.';
+            $message = 'Database setup failed. Check the .env database settings. On cPanel, create the database and user first, assign the user to the database with the required privileges, and use their full prefixed names.';
         } catch (RuntimeException $exception) {
             $message = $exception->getMessage();
         }
@@ -243,9 +274,19 @@ $basePath = $basePath === '/' ? '' : rtrim($basePath, '/');
     <?php if ($complete): ?>
         <a class="button button-primary" href="<?= $escape($basePath) ?>/login">Go to sign in</a>
         <p class="setup-description">For security, remove <code>setup.php</code> from the web root now.</p>
-    <?php else: ?>
+    <?php elseif (!$authorized && $remoteSetupEnabled): ?>
         <form class="form-panel setup-form" method="post" action="<?= $escape($basePath) ?>/setup.php">
             <input type="hidden" name="_csrf" value="<?= $escape($_SESSION['_csrf']) ?>">
+            <input type="hidden" name="_setup_action" value="unlock">
+            <label>Private setup key
+                <input type="password" name="setup_token" minlength="32" autocomplete="off" required autofocus>
+            </label>
+            <button class="button button-primary" type="submit">Unlock setup</button>
+        </form>
+    <?php elseif ($authorized): ?>
+        <form class="form-panel setup-form" method="post" action="<?= $escape($basePath) ?>/setup.php">
+            <input type="hidden" name="_csrf" value="<?= $escape($_SESSION['_csrf']) ?>">
+            <input type="hidden" name="_setup_action" value="install">
             <label>Administrator name
                 <input type="text" name="name" maxlength="150" value="<?= $escape($oldName) ?>" autocomplete="name" required autofocus>
             </label>
@@ -260,7 +301,7 @@ $basePath = $basePath === '/' ? '' : rtrim($basePath, '/');
             </label>
             <button class="button button-primary" type="submit">Install LibraryDesk</button>
         </form>
-        <p class="setup-description">This installer is restricted to requests from this computer and refuses to run if user accounts already exist.</p>
+        <p class="setup-description">Setup refuses to run if user accounts already exist. Hosted setup requires your private setup key.</p>
     <?php endif; ?>
 </main>
 </body>

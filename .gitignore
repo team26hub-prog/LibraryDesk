@@ -2,3 +2,5 @@
 .env.*
 !.env.example
 .setup.lock
+.vscode/
+*.code-workspace

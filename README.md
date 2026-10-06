@@ -48,9 +48,16 @@ The local `.env` file is excluded from Git. Do not commit database passwords or 
 
 ### 3. Run the one-time installer
 
-Start Laragon or PHP's built-in server, then open `http://localhost/librarymanagement/setup.php` (or `http://localhost:8000/setup.php`). The installer creates the configured database if needed, installs the tables from [`database/schema.sql`](database/schema.sql), and creates the first admin account. It is restricted to localhost and will not run if user accounts already exist.
+Start Laragon or PHP's built-in server, then open `http://localhost/librarymanagement/setup.php` (or `http://localhost:8000/setup.php`). The installer creates the configured database if needed, installs the tables from [`database/schema.sql`](database/schema.sql), and creates the first admin account. Remote installation requires the private setup key described below. It will not run if user accounts already exist.
 
 After setup completes, remove `setup.php` from the web root. A local `.setup.lock` file also prevents rerunning the installer and is excluded from Git.
+
+### Installing on cPanel
+
+1. Create a MySQL database and database user in cPanel, then assign that user to the database with privileges to create tables and read/write application records. Enter the full cPanel-prefixed database and user names in the server `.env` file. Setup uses the existing database without requiring permission to create databases.
+2. Generate a private setup key using `php -r "echo bin2hex(random_bytes(32));"`, and add `SETUP_TOKEN=your_generated_key` to the server `.env`. Keep the key out of source control and URLs. A blank key, or one shorter than 32 characters, keeps remote setup disabled.
+3. Visit `https://your-domain/setup.php`, enter that key to unlock setup, then fill in the first administrator's details and install. The key is submitted by POST and authorization stays in your session. Changing the configured key invalidates earlier unlocks.
+4. Remove `setup.php` and clear `SETUP_TOKEN` after installation. Keep `.setup.lock` in place.
 
 ### 4. Open the application
 
