@@ -25,11 +25,7 @@ Book borrowing is recorded by library staff; members can browse the catalogue bu
 
 For Laragon, place this directory under `D:\laragon\www` and start Apache and MySQL.
 
-### 2. Create the database
-
-Import [`database/schema.sql`](database/schema.sql) using HeidiSQL, phpMyAdmin, or the MySQL command-line client. The script creates and selects the `library_management` database and defines the users, books, and borrow-record tables.
-
-### 3. Configure the database connection
+### 2. Configure the database connection
 
 Copy the example environment file to `.env` in the project root:
 
@@ -50,7 +46,13 @@ DB_CHARSET=utf8mb4
 
 The local `.env` file is excluded from Git. Do not commit database passwords or other secrets.
 
-### 4. Start the application
+### 3. Run the one-time installer
+
+Start Laragon or PHP's built-in server, then open `http://localhost/librarymanagement/setup.php` (or `http://localhost:8000/setup.php`). The installer creates the configured database if needed, installs the tables from [`database/schema.sql`](database/schema.sql), and creates the first admin account. It is restricted to localhost and will not run if user accounts already exist.
+
+After setup completes, remove `setup.php` from the web root. A local `.setup.lock` file also prevents rerunning the installer and is excluded from Git.
+
+### 4. Open the application
 
 With Laragon, open the project at `http://localhost/librarymanagement/`.
 

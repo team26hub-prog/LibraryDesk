@@ -6,12 +6,16 @@ if (PHP_SAPI === 'cli-server') {
     $requestPath = rawurldecode((string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH));
     $assetRoot = realpath(__DIR__ . '/public/assets');
     $requestedFile = realpath(__DIR__ . $requestPath);
+    $setupFile = realpath(__DIR__ . '/setup.php');
     if (
         $assetRoot !== false
         && $requestedFile !== false
         && str_starts_with($requestedFile, $assetRoot . DIRECTORY_SEPARATOR)
         && is_file($requestedFile)
     ) {
+        return false;
+    }
+    if ($setupFile !== false && $requestedFile === $setupFile && is_file($requestedFile)) {
         return false;
     }
 }

@@ -3,6 +3,7 @@ RewriteEngine On
 
 # Keep application source and configuration out of direct web access.
 RewriteRule ^\.env(?:\..*)?$ - [F,L,NC]
+RewriteRule ^\.setup\.lock$ - [F,L,NC]
 RewriteRule ^(app|config|database|routes|storage)(/|$) - [F,L,NC]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
