@@ -1,5 +1,5 @@
 <article class="member-book-card">
-    <div class="member-book-cover" aria-hidden="true">▤</div>
+    <div class="member-book-cover" aria-hidden="true"><?= icon('books') ?></div>
     <div class="member-book-details">
         <div class="member-book-status">
             <?php

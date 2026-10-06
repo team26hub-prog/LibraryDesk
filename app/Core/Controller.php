@@ -28,9 +28,9 @@ abstract class Controller
         exit;
     }
 
-    protected function flash(string $type, string $message): void
+    protected function flash(string $type, string $message, ?string $title = null): void
     {
-        $_SESSION['flash'] = ['type' => $type, 'message' => $message];
+        $_SESSION['flash'] = ['type' => $type, 'message' => $message, 'title' => $title];
     }
 
     protected function requireValidCsrfToken(): void
@@ -40,7 +40,9 @@ abstract class Controller
 
         if (!is_string($submittedToken) || !is_string($sessionToken) || !hash_equals($sessionToken, $submittedToken)) {
             http_response_code(419);
-            exit('The form expired. Go back, refresh the page, and try again.');
+            $this->flash('error', 'Refresh the form and try again. Your changes were not submitted.', 'Form expired');
+            $this->view('errors/expired', ['title' => 'Form expired']);
+            exit;
         }
     }
 

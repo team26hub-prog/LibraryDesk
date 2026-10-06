@@ -9,13 +9,85 @@ document.querySelectorAll('[data-table-search]').forEach((input) => {
     });
 });
 
+const alerts = window.Swal?.mixin({
+    confirmButtonColor: '#286852',
+    cancelButtonColor: '#65736b',
+    customClass: { popup: 'library-alert' },
+    heightAuto: false,
+});
+
+const flashNotice = document.querySelector('[data-flash]');
+if (alerts && flashNotice) {
+    const type = flashNotice.dataset.flashType;
+    const icon = ['success', 'error', 'warning', 'info', 'question'].includes(type) ? type : 'info';
+    alerts.fire({
+        icon,
+        titleText: flashNotice.dataset.flashTitle || (icon === 'success' ? 'Success' : icon === 'error' ? 'Something went wrong' : 'Please note'),
+        text: flashNotice.textContent.trim(),
+        confirmButtonText: 'OK',
+    });
+    flashNotice.hidden = true;
+}
+
 document.querySelectorAll('form[data-confirm]').forEach((form) => {
-    form.addEventListener('submit', (event) => {
-        if (!window.confirm(form.dataset.confirm)) {
-            event.preventDefault();
+    let confirmed = false;
+    let pending = false;
+    form.addEventListener('submit', async (event) => {
+        if (confirmed) {
+            confirmed = false;
+            return;
+        }
+        event.preventDefault();
+        if (pending) return;
+        pending = true;
+        const submitter = event.submitter;
+        try {
+            const isDelete = new URL(form.action, window.location.href).pathname.endsWith('/delete');
+            const isReturn = new URL(form.action, window.location.href).pathname.endsWith('/return');
+            const approved = alerts
+                ? (await alerts.fire({
+                    icon: form.dataset.confirmIcon || (isReturn ? 'question' : 'warning'),
+                    titleText: form.dataset.confirmTitle || (isDelete ? 'Delete this record?' : isReturn ? 'Confirm book return?' : 'Are you sure?'),
+                    text: form.dataset.confirm,
+                    showCancelButton: true,
+                    confirmButtonText: form.dataset.confirmButton || (isDelete ? 'Delete' : isReturn ? 'Mark as returned' : 'Confirm'),
+                    confirmButtonColor: isDelete ? '#aa5145' : '#286852',
+                    cancelButtonText: 'Cancel',
+                    focusCancel: true,
+                    reverseButtons: true,
+                })).isConfirmed
+                : window.confirm(form.dataset.confirm);
+            if (approved) {
+                confirmed = true;
+                form.requestSubmit(submitter || undefined);
+                confirmed = false;
+            }
+        } finally {
+            pending = false;
         }
     });
 });
+
+// Show one validation dialog even when several fields are invalid.
+let validationAlertOpen = false;
+document.addEventListener('invalid', (event) => {
+    if (!alerts) return;
+    event.preventDefault();
+    if (validationAlertOpen) return;
+    validationAlertOpen = true;
+    const field = event.target;
+    const label = field.labels?.[0]?.childNodes[0]?.textContent.trim();
+    alerts.fire({
+        icon: 'warning',
+        titleText: label ? `Check ${label.toLowerCase()}` : 'Check your details',
+        text: field.validationMessage,
+        confirmButtonText: 'Review field',
+        returnFocus: false,
+    }).then(() => {
+        validationAlertOpen = false;
+        field.focus();
+    });
+}, true);
 
 document.querySelectorAll('[data-nav-toggle]').forEach((toggle) => {
     const sidebar = toggle.closest('.sidebar');
@@ -48,6 +120,8 @@ const strictEmailPattern = /^[^\s@]{1,64}@(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0
 const isStrictEmail = (email) => email.length <= 190 && strictEmailPattern.test(email);
 
 document.querySelectorAll('form[data-auth-login], form[data-auth-register]').forEach((form) => {
+    // Run custom validation before displaying field errors.
+    form.noValidate = true;
     const email = form.querySelector('input[name="email"]');
     const password = form.querySelector('input[name="password"]');
     const name = form.querySelector('[data-auth-name]');
@@ -118,7 +192,7 @@ document.querySelectorAll('form[data-auth-login], form[data-auth-register]').for
 
         if (!form.checkValidity()) {
             event.preventDefault();
-            form.reportValidity();
+            if (!alerts) form.reportValidity();
         }
     });
 });

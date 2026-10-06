@@ -45,6 +45,7 @@ final class AuthController extends Controller
 		$_SESSION['user_id'] = (int) $user['id'];
 		$_SESSION['user_name'] = $user['name'];
 		$_SESSION['role'] = $user['role'];
+		$this->flash('success', 'Welcome back, ' . $user['name'] . '.', 'Signed in');
 		$this->redirect('/');
 	}
 
@@ -100,6 +101,7 @@ final class AuthController extends Controller
 		$_SESSION['user_id'] = $userId;
 		$_SESSION['user_name'] = $name;
 		$_SESSION['role'] = $role;
+		$this->flash('success', 'Your library account is ready. You are now signed in.', 'Account created');
 		$this->redirect('/');
 	}
 
@@ -108,6 +110,7 @@ final class AuthController extends Controller
 		$this->requireValidCsrfToken();
 		$_SESSION = [];
 		session_regenerate_id(true);
+		$this->flash('success', 'You have been signed out of your account.', 'Signed out');
 		$this->redirect('/login');
 	}
 
