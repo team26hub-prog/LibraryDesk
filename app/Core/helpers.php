@@ -12,6 +12,18 @@ function csrf_field(): string
     return '<input type="hidden" name="_csrf" value="' . e($_SESSION['_csrf'] ?? '') . '">';
 }
 
+function full_name_pattern(): string
+{
+    return "\\p{L}[\\p{L}\\p{M}]*(?:[ '’\\-]\\p{L}[\\p{L}\\p{M}]*)*";
+}
+
+function valid_full_name(string $name): bool
+{
+    return mb_check_encoding($name, 'UTF-8')
+        && mb_strlen($name) <= 150
+        && preg_match('/\\A' . full_name_pattern() . '\\z/u', $name) === 1;
+}
+
 /** Render a decorative icon from the application's shared outline set. */
 function icon(string $name): string
 {
@@ -26,6 +38,7 @@ function icon(string $name): string
         'history' => '<path d="M3 11a9 9 0 1 1 2.7 7.4M3 4v7h7M12 7v5l3 2"/>',
         'alert' => '<circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 17h.01"/>',
         'arrow-right' => '<path d="M5 12h14m-6-6 6 6-6 6"/>',
+        'arrow-left' => '<path d="M19 12H5m6-6-6 6 6 6"/>',
         'search' => '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
         'plus' => '<path d="M12 5v14M5 12h14"/>',
         'request' => '<path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l-3 3V11.5A8.5 8.5 0 0 1 9.5 3H21v8.5Z"/><path d="M7 8h8M7 12h6"/>',

@@ -97,8 +97,8 @@ final class MemberController extends Controller
         $this->requireValidCsrfToken();
         $submittedName = $_POST['name'] ?? null;
         $name = is_string($submittedName) ? trim($submittedName) : '';
-        if ($name === '' || mb_strlen($name) > 150) {
-            $this->flash('error', 'Enter a name using no more than 150 characters.');
+        if (!valid_full_name($name)) {
+            $this->flash('error', 'Enter a full name using letters, spaces, apostrophes, or hyphens, up to 150 characters.');
             $this->redirect('/profile');
         }
 

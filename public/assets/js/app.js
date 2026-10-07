@@ -20,53 +20,27 @@ const flashNotice = document.querySelector('[data-flash]');
 if (alerts && flashNotice) {
     const type = flashNotice.dataset.flashType;
     const icon = ['success', 'error', 'warning', 'info', 'question'].includes(type) ? type : 'info';
+    const completed = icon === 'success';
     alerts.fire({
         icon,
         titleText: flashNotice.dataset.flashTitle || (icon === 'success' ? 'Success' : icon === 'error' ? 'Something went wrong' : 'Please note'),
         text: flashNotice.textContent.trim(),
-        confirmButtonText: 'OK',
+        toast: completed,
+        position: completed ? 'top-end' : 'center',
+        showConfirmButton: !completed,
+        showCancelButton: !completed,
+        confirmButtonText: icon === 'error' || icon === 'warning' ? 'Review details' : 'OK',
+        cancelButtonText: 'Close',
+        timer: completed ? 3000 : undefined,
+        timerProgressBar: completed,
+        returnFocus: false,
+    }).then((result) => {
+        if (result.isConfirmed && (icon === 'error' || icon === 'warning')) {
+            document.querySelector('.page-content form input:not([type="hidden"]):not([disabled])')?.focus();
+        }
     });
     flashNotice.hidden = true;
 }
-
-document.querySelectorAll('form[data-confirm]').forEach((form) => {
-    let confirmed = false;
-    let pending = false;
-    form.addEventListener('submit', async (event) => {
-        if (confirmed) {
-            confirmed = false;
-            return;
-        }
-        event.preventDefault();
-        if (pending) return;
-        pending = true;
-        const submitter = event.submitter;
-        try {
-            const isDelete = new URL(form.action, window.location.href).pathname.endsWith('/delete');
-            const isReturn = new URL(form.action, window.location.href).pathname.endsWith('/return');
-            const approved = alerts
-                ? (await alerts.fire({
-                    icon: form.dataset.confirmIcon || (isReturn ? 'question' : 'warning'),
-                    titleText: form.dataset.confirmTitle || (isDelete ? 'Delete this record?' : isReturn ? 'Confirm book return?' : 'Are you sure?'),
-                    text: form.dataset.confirm,
-                    showCancelButton: true,
-                    confirmButtonText: form.dataset.confirmButton || (isDelete ? 'Delete' : isReturn ? 'Mark as returned' : 'Confirm'),
-                    confirmButtonColor: isDelete ? '#aa5145' : '#286852',
-                    cancelButtonText: 'Cancel',
-                    focusCancel: true,
-                    reverseButtons: true,
-                })).isConfirmed
-                : window.confirm(form.dataset.confirm);
-            if (approved) {
-                confirmed = true;
-                form.requestSubmit(submitter || undefined);
-                confirmed = false;
-            }
-        } finally {
-            pending = false;
-        }
-    });
-});
 
 // Show one validation dialog even when several fields are invalid.
 let validationAlertOpen = false;
@@ -82,10 +56,12 @@ document.addEventListener('invalid', (event) => {
         titleText: label ? `Check ${label.toLowerCase()}` : 'Check your details',
         text: field.validationMessage,
         confirmButtonText: 'Review field',
+        showCancelButton: true,
+        cancelButtonText: 'Cancel',
         returnFocus: false,
-    }).then(() => {
+    }).then((result) => {
         validationAlertOpen = false;
-        field.focus();
+        if (result.isConfirmed) field.focus();
     });
 }, true);
 
@@ -145,7 +121,23 @@ document.querySelectorAll('[data-nav-toggle]').forEach((toggle) => {
     window.matchMedia('(min-width: 621px)').addEventListener('change', () => setOpen(false));
 });
 
-const controlCharacterPattern = /[\u0000-\u001f\u007f]/;
+const validateFullName = (input) => {
+    const name = input.value.trim();
+    const pattern = new RegExp(`^(?:${input.pattern})$`, 'u');
+    input.setCustomValidity(
+        name === '' || Array.from(name).length > 150 || !pattern.test(name)
+            ? 'Enter a full name using letters, spaces, apostrophes, or hyphens, up to 150 characters.'
+            : ''
+    );
+};
+
+document.querySelectorAll('[data-full-name]').forEach((input) => {
+    input.addEventListener('input', () => validateFullName(input));
+    input.addEventListener('blur', () => {
+        input.value = input.value.trim();
+        validateFullName(input);
+    });
+});
 const strictEmailPattern = /^[^\s@]{1,64}@(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?$/i;
 
 const isStrictEmail = (email) => email.length <= 190 && strictEmailPattern.test(email);
@@ -161,12 +153,7 @@ document.querySelectorAll('form[data-auth-login], form[data-auth-register]').for
 
     const validateName = () => {
         if (!name) return;
-        const trimmedName = name.value.trim();
-        name.setCustomValidity(
-            trimmedName.length === 0 || controlCharacterPattern.test(trimmedName)
-                ? 'Enter a name without control characters.'
-                : ''
-        );
+        validateFullName(name);
     };
 
     const validatePassword = () => {
@@ -224,6 +211,79 @@ document.querySelectorAll('form[data-auth-login], form[data-auth-register]').for
         if (!form.checkValidity()) {
             event.preventDefault();
             if (!alerts) form.reportValidity();
+        }
+    });
+});
+
+// Register after validation so invalid forms never ask to confirm an action.
+const confirmationActions = [
+    ['/users/store', 'Add this user?', 'Create this library user with the details entered?', 'Add user'],
+    ['/users/update', 'Save user changes?', 'Update this user with the details entered?', 'Save changes'],
+    ['/users/delete', 'Delete this user?', 'This will permanently delete the user. This action cannot be undone.', 'Delete user', 'warning'],
+    ['/books/store', 'Add this book?', 'Add this book to the library catalogue?', 'Add book'],
+    ['/books/update', 'Save book changes?', 'Update this book with the details entered?', 'Save changes'],
+    ['/books/delete', 'Delete this book?', 'This will permanently delete the book. This action cannot be undone.', 'Delete book', 'warning'],
+    ['/borrow/checkout', 'Check out this book?', 'Record the selected member, book, and due date as a new borrow?', 'Check out'],
+    ['/borrow/return', 'Mark this book as returned?', 'Confirm the book has been returned to the library.', 'Mark as returned'],
+    ['/book-requests/cancel', 'Cancel your book request?', 'Remove your pending request? You can request the book again later.', 'Cancel request', 'warning'],
+    ['/book-requests', 'Request this book?', 'Send this book request to the library admin?', 'Request book'],
+    ['/profile/name', 'Save your name?', 'Update your profile with the name entered?', 'Save name'],
+    ['/profile/password', 'Change your password?', 'Use the new password for future sign-ins?', 'Change password'],
+    ['/register', 'Create your account?', 'Register your library account with the details entered?', 'Create account'],
+    ['/logout', 'Sign out?', 'You can sign in again whenever you need to.', 'Sign out'],
+];
+
+document.querySelectorAll('form[method="post"]').forEach((form) => {
+    let confirmed = false;
+    let pending = false;
+    form.addEventListener('submit', async (event) => {
+        if (event.defaultPrevented || confirmed) return;
+        const path = new URL(form.action, window.location.href).pathname;
+        const submitter = event.submitter;
+        let action = confirmationActions.find(([suffix]) => path.endsWith(suffix));
+        if (path.endsWith('/book-requests/status')) {
+            if (submitter?.value === 'granted') {
+                action = [path, 'Grant this book request?', 'Mark this request as Granted? Record any book checkout separately in Borrow & return.', 'Grant request'];
+            } else if (submitter?.value === 'cancelled') {
+                action = [path, 'Cancel this book request?', 'Mark this request as Cancelled? The member can request the book again.', 'Cancel request', 'warning'];
+            }
+        }
+        if (!action && !form.dataset.confirm) return;
+        event.preventDefault();
+        if (pending) return;
+        if (!form.checkValidity()) {
+            if (!alerts) form.reportValidity();
+            return;
+        }
+        pending = true;
+        const title = form.dataset.confirmTitle || action?.[1] || 'Are you sure?';
+        const message = action?.[2] || form.dataset.confirm;
+        const icon = form.dataset.confirmIcon || action?.[4] || 'question';
+        try {
+            const approved = alerts
+                ? (await alerts.fire({
+                    icon,
+                    titleText: title,
+                    text: message,
+                    showCancelButton: true,
+                    confirmButtonText: form.dataset.confirmButton || action?.[3] || 'OK',
+                    confirmButtonColor: icon === 'warning' ? '#aa5145' : '#286852',
+                    cancelButtonText: 'Cancel',
+                    focusCancel: true,
+                    reverseButtons: true,
+                })).isConfirmed
+                : window.confirm(`${title}\n${message}`);
+            if (approved) {
+                confirmed = true;
+                try {
+                    // Preserve the clicked button's name/value (Granted versus Cancel).
+                    form.requestSubmit(submitter || undefined);
+                } finally {
+                    confirmed = false;
+                }
+            }
+        } finally {
+            pending = false;
         }
     });
 });

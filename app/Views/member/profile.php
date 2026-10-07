@@ -6,7 +6,7 @@
         <div class="form-panel-heading"><p class="eyebrow">ACCOUNT DETAILS</p><h2>Your profile</h2></div>
         <form class="stacked-form" method="post" action="<?= e(BASE_PATH) ?>/profile/name">
             <?= csrf_field() ?>
-            <label>Full name<input type="text" name="name" maxlength="150" value="<?= e($user['name']) ?>" autocomplete="name" required></label>
+            <label>Full name<input type="text" name="name" maxlength="150" value="<?= e($user['name']) ?>" autocomplete="name" pattern="<?= e(full_name_pattern()) ?>" title="Use letters, spaces, apostrophes, or hyphens." required data-full-name></label>
             <label>Email address<input type="email" value="<?= e($user['email']) ?>" autocomplete="email" readonly></label>
             <label>Membership status<input type="text" value="<?= e(ucfirst($user['status'])) ?>" readonly></label>
             <div class="form-actions"><button class="button button-primary" type="submit">Save name</button></div>

@@ -70,13 +70,8 @@ final class AuthController extends Controller
 		$confirmation = is_string($confirmationInput) ? $confirmationInput : '';
 		$oldInput = ['name' => $name, 'email' => $email];
 
-		if (
-			$name === ''
-			|| !mb_check_encoding($name, 'UTF-8')
-			|| mb_strlen($name) > 150
-			|| preg_match('/[\x00-\x1F\x7F]/u', $name) === 1
-		) {
-			$this->redirectWithAuthError('/register', 'Enter a name using 150 characters or fewer, without control characters.', $oldInput);
+		if (!valid_full_name($name)) {
+			$this->redirectWithAuthError('/register', 'Enter a full name using letters, spaces, apostrophes, or hyphens, up to 150 characters.', $oldInput);
 		}
 		if ($email === '' || !$this->isValidEmail($email)) {
 			$this->redirectWithAuthError('/register', 'Enter a valid email address with a fully qualified domain, such as name@example.com.', $oldInput);

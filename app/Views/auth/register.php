@@ -6,7 +6,7 @@ unset($_SESSION['_auth_old']);
 	<div class="auth-heading"><p class="eyebrow">LIBRARY DESK</p><h1>Create account</h1><p class="page-description">Register a library account.</p></div>
 	<form class="form-panel stacked-form auth-form" method="post" action="<?= e(BASE_PATH) ?>/register" data-auth-register>
 		<?= csrf_field() ?>
-		<label>Full name<input type="text" name="name" maxlength="150" value="<?= e($oldAuthInput['name'] ?? '') ?>" autocomplete="name" required autofocus data-auth-name></label>
+		<label>Full name<input type="text" name="name" maxlength="150" value="<?= e($oldAuthInput['name'] ?? '') ?>" autocomplete="name" pattern="<?= e(full_name_pattern()) ?>" title="Use letters, spaces, apostrophes, or hyphens." required autofocus data-auth-name data-full-name></label>
 		<label>Email address<input type="email" name="email" maxlength="190" value="<?= e($oldAuthInput['email'] ?? '') ?>" autocomplete="email" required></label>
 		<div class="auth-password-field">
 			<label for="register-password">Password</label>

@@ -94,6 +94,8 @@ h1 { margin-bottom: 7px; font-size: 29px; line-height: 1.2; letter-spacing: 0; }
 .button-primary:hover { background: #1f5944; }
 .button-secondary { border: 1px solid #dce3dd; background: #fff; color: #34473e; }
 .button-secondary:hover { background: #f2f6f2; }
+.back-button { min-height: 32px; padding: 0 10px; font-size: 12px; white-space: nowrap; border-radius: 10px; }
+.page-back-row { display: flex; justify-content: flex-start; margin-bottom: 16px; }
 .table-panel { border: 1px solid var(--line); background: #fff; }
 .table-toolbar { display: flex; min-height: 76px; align-items: center; justify-content: space-between; gap: 15px; padding: 13px 18px; border-bottom: 1px solid var(--line); }
 .table-toolbar h2 { margin: 0 0 4px; font-size: 13px; }

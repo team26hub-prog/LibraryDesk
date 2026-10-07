@@ -97,13 +97,14 @@ final class UserController extends Controller
 
     private function validatedUser(): array
     {
-        $name = trim((string) ($_POST['name'] ?? ''));
+        $submittedName = $_POST['name'] ?? null;
+        $name = is_string($submittedName) ? trim($submittedName) : '';
         $email = trim((string) ($_POST['email'] ?? ''));
         $role = (string) ($_POST['role'] ?? 'member');
         $status = (string) ($_POST['status'] ?? 'active');
 
-        if ($name === '' || mb_strlen($name) > 150) {
-            throw new \InvalidArgumentException('Enter a name using no more than 150 characters.');
+        if (!valid_full_name($name)) {
+            throw new \InvalidArgumentException('Enter a full name using letters, spaces, apostrophes, or hyphens, up to 150 characters.');
         }
         if (!filter_var($email, FILTER_VALIDATE_EMAIL) || mb_strlen($email) > 190) {
             throw new \InvalidArgumentException('Enter a valid email address.');
