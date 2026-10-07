@@ -70,10 +70,11 @@ final class User extends Model
 
     public function update(int $id, array $data): void
     {
+        $this->requireUnprotectedUser($id);
         $data['id'] = $id;
         $statement = $this->database->prepare(
             'UPDATE users SET name = :name, email = :email, phone = :phone,
-                    role = :role, status = :status WHERE id = :id'
+                    role = :role, status = :status WHERE id = :id AND role <> \'admin\''
         );
         $statement->execute($data);
     }
@@ -107,7 +108,19 @@ final class User extends Model
 
     public function delete(int $id): void
     {
-        $statement = $this->database->prepare('DELETE FROM users WHERE id = :id');
+        $this->requireUnprotectedUser($id);
+        $statement = $this->database->prepare('DELETE FROM users WHERE id = :id AND role <> \'admin\'');
         $statement->execute(['id' => $id]);
+    }
+
+    private function requireUnprotectedUser(int $id): void
+    {
+        $user = $this->find($id);
+        if ($user === null) {
+            throw new InvalidArgumentException('That user could not be found.');
+        }
+        if ($user['role'] === 'admin') {
+            throw new InvalidArgumentException('Admin accounts are protected and cannot be edited or deleted.');
+        }
     }
 }

@@ -85,7 +85,7 @@ final class BookController extends Controller
             (new Book())->delete((int) $id);
             $this->flash('success', 'Book deleted.');
         } catch (\Throwable $exception) {
-            $this->flash('error', 'Could not delete this book while it has borrow history.');
+            $this->flash('error', 'Could not delete this book while it has borrow history or book requests.');
         }
         $this->redirect('/books');
     }

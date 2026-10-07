@@ -13,25 +13,21 @@
     $statIcon = 'borrow';
     $statLabel = 'CURRENTLY BORROWED';
     $statValue = $stats['currently_borrowed'];
-    $statNote = 'Books not yet returned';
     $statTone = 'green';
     require __DIR__ . '/partials/_stat-card.php';
     $statIcon = 'clock';
     $statLabel = 'DUE SOON';
     $statValue = $stats['due_soon'];
-    $statNote = 'Due within 3 days';
     $statTone = 'yellow';
     require __DIR__ . '/partials/_stat-card.php';
     $statIcon = 'alert';
     $statLabel = 'OVERDUE';
     $statValue = $stats['overdue'];
-    $statNote = 'Please return these soon';
     $statTone = (int) $stats['overdue'] > 0 ? 'coral' : 'blue';
     require __DIR__ . '/partials/_stat-card.php';
     $statIcon = 'books';
     $statLabel = 'TOTAL BORROWED';
     $statValue = $stats['total_borrowed'];
-    $statNote = 'All-time borrow count';
     $statTone = 'blue';
     require __DIR__ . '/partials/_stat-card.php';
     ?>

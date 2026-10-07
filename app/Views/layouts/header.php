@@ -19,6 +19,7 @@ if ($role === 'member') {
         ['path' => '/users', 'icon' => 'users', 'label' => 'Users'],
         ['path' => '/books', 'icon' => 'books', 'label' => 'Books'],
         ['path' => '/borrow', 'icon' => 'borrow', 'label' => 'Borrow & return'],
+        ['path' => '/book-requests', 'icon' => 'request', 'label' => 'Requests'],
     ];
 } elseif ($role === 'librarian') {
     $quickLinks = [
@@ -34,7 +35,7 @@ if ($role === 'member') {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= $escape($title ?? 'Library Desk') ?> | Library Desk</title>
     <link rel="stylesheet" href="<?= $escape(BASE_PATH) ?>/public/assets/vendor/sweetalert2/sweetalert2.min.css">
-    <link rel="stylesheet" href="<?= $escape(BASE_PATH) ?>/public/assets/css/app.css">
+    <link rel="stylesheet" href="<?= $escape(BASE_PATH) ?>/public/assets/css/app.css?v=<?= (int) filemtime(dirname(__DIR__, 3) . '/public/assets/css/app.css') ?>">
 </head>
 <body>
 <div class="app-shell <?= isset($_SESSION['user_id']) && $quickLinks !== [] ? 'has-mobile-quick-nav' : '' ?>">
@@ -70,6 +71,9 @@ if ($role === 'member') {
             <?php if ($role === 'admin'): ?>
                 <a class="nav-link <?= str_contains((string) $currentPath, '/users') ? 'is-active' : '' ?>" href="<?= $escape(BASE_PATH) ?>/users">
                     <span class="nav-icon"><?= icon('users') ?></span> Users
+                </a>
+                <a class="nav-link <?= $currentPath === BASE_PATH . '/book-requests' ? 'is-active' : '' ?>" href="<?= $escape(BASE_PATH) ?>/book-requests">
+                    <span class="nav-icon"><?= icon('request') ?></span> Book requests
                 </a>
             <?php endif; ?>
             <?php if (in_array($role, ['admin', 'librarian'], true)): ?>

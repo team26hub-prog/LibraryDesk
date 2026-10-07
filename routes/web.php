@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Controllers\BookController;
+use App\Controllers\BookRequestController;
 use App\Controllers\BorrowController;
 use App\Controllers\DashboardController;
 use App\Controllers\AuthController;
@@ -18,6 +19,10 @@ $router->post('/logout', [AuthController::class, 'logout']);
 $router->get('/', [DashboardController::class, 'index']);
 
 $router->get('/browse', [MemberController::class, 'browse']);
+$router->post('/book-requests', [BookRequestController::class, 'store']);
+$router->post('/book-requests/cancel', [BookRequestController::class, 'cancel']);
+$router->post('/book-requests/status', [BookRequestController::class, 'decide']);
+$router->get('/book-requests', [BookRequestController::class, 'index']);
 $router->get('/my-borrows', [MemberController::class, 'borrows']);
 $router->get('/history', [MemberController::class, 'history']);
 $router->get('/profile', [MemberController::class, 'profile']);

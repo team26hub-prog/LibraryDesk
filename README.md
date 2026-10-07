@@ -8,10 +8,15 @@ LibraryDesk is a lightweight library management application built with PHP and M
 - **Librarian:** manage books and process borrows and returns.
 - **Member:** view a personal overview, browse and search the catalogue, check active borrows and due dates, review borrow history, and update profile details.
 - **Catalogue:** filter books by category and availability, with paginated results.
+- **Book requests:** members can request a book from overview or catalogue cards and cancel their own requests using Cancel beside Requested. Cancelling removes the request from the admin list and allows the member to request the book again. Admins can open Book requests to see the member, email, book, author, and request time. Duplicate requests are prevented; requests do not reserve copies or create loans.
 - **Responsive interface:** shared desktop layout, mobile hamburger navigation, and role-aware mobile quick actions.
 - **Application safeguards:** role checks on protected routes, prepared database queries, password hashing, CSRF-protected forms, server-side validation, and escaped template output.
 
 Book borrowing is recorded by library staff; members can browse the catalogue but cannot directly create or modify borrow records.
+
+For an existing installation, run [`database/migrations/20261007_book_requests.sql`](database/migrations/20261007_book_requests.sql) against the configured database before deploying the book request feature. This adds a table without changing existing records. New installations include it in the schema. Requests retain their member and book references, so records with requests cannot be deleted.
+
+Existing installations with book requests also need [`database/migrations/20261007_book_request_status.sql`](database/migrations/20261007_book_request_status.sql), applied once, to add request status. Existing requests start as pending. Admins can choose Granted or Cancel in the Status column; the saved decision replaces both buttons. Member cards show Granted for granted requests and an active Request button for cancelled requests. Requesting again reopens the cancelled request as pending with a new request time. Members can cancel pending requests. Handled requests remain in the admin list until reopened. Granting a request does not create a loan; staff still record the borrow through Borrow & return.
 
 ## Requirements
 

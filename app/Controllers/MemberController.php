@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Models\Book;
+use App\Models\BookRequest;
 use App\Models\Borrow;
 use App\Models\User;
 use InvalidArgumentException;
@@ -32,6 +33,7 @@ final class MemberController extends Controller
         $page = min($page, $pageCount);
         $this->view('member/browse', [
             'title' => 'Browse books',
+            'requestStatuses' => (new BookRequest())->memberStatuses((int) $_SESSION['user_id']),
             'books' => $books->browseForMembers(
                 $search,
                 $category,

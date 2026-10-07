@@ -89,6 +89,37 @@ document.addEventListener('invalid', (event) => {
     });
 }, true);
 
+// Keep the mobile account bar below the navigation, including its expanded menu.
+const mobileSidebar = document.querySelector('.sidebar');
+if (mobileSidebar) {
+    const updateMobileNavHeight = () => {
+        document.documentElement.style.setProperty('--mobile-nav-height', `${mobileSidebar.getBoundingClientRect().height}px`);
+    };
+    updateMobileNavHeight();
+    if (typeof ResizeObserver !== 'undefined') {
+        new ResizeObserver(updateMobileNavHeight).observe(mobileSidebar);
+    } else {
+        window.addEventListener('resize', updateMobileNavHeight);
+    }
+}
+
+document.querySelectorAll('[data-password-toggle]').forEach((toggle) => {
+    const input = document.getElementById(toggle.getAttribute('aria-controls'));
+    if (!input) return;
+    const fieldName = input.labels?.[0]?.textContent.trim().toLowerCase() || 'password';
+    const syncVisibility = () => {
+        const visible = input.type === 'text';
+        toggle.setAttribute('aria-pressed', String(visible));
+        toggle.setAttribute('aria-label', `${visible ? 'Hide' : 'Show'} ${fieldName}`);
+    };
+    syncVisibility();
+    toggle.hidden = false;
+    toggle.addEventListener('click', () => {
+        input.type = input.type === 'password' ? 'text' : 'password';
+        syncVisibility();
+    });
+});
+
 document.querySelectorAll('[data-nav-toggle]').forEach((toggle) => {
     const sidebar = toggle.closest('.sidebar');
     if (!sidebar) return;

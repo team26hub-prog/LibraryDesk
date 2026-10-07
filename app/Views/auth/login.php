@@ -7,7 +7,13 @@ unset($_SESSION['_auth_old']);
 	<form class="form-panel stacked-form auth-form" method="post" action="<?= e(BASE_PATH) ?>/login" data-auth-login>
 		<?= csrf_field() ?>
 		<label>Email address<input type="email" name="email" maxlength="190" value="<?= e($oldAuthInput['email'] ?? '') ?>" autocomplete="username" required autofocus></label>
-		<label>Password<input type="password" name="password" maxlength="4096" autocomplete="current-password" required></label>
+		<div class="auth-password-field">
+			<label for="login-password">Password</label>
+			<span class="password-input">
+				<input id="login-password" type="password" name="password" maxlength="4096" autocomplete="current-password" required>
+				<button class="password-toggle" type="button" aria-label="Show password" aria-controls="login-password" aria-pressed="false" data-password-toggle hidden><span class="password-eye-show"><?= icon('eye') ?></span><span class="password-eye-hide"><?= icon('eye-off') ?></span></button>
+			</span>
+		</div>
 		<button class="button button-primary" type="submit">Sign in</button>
 		<div class="auth-switch">
 			<p>New to the system?</p>

@@ -32,6 +32,10 @@ final class UserController extends Controller
             $this->flash('error', 'That user could not be found.');
             $this->redirect('/users');
         }
+        if ($user['role'] === 'admin') {
+            $this->flash('error', 'Admin accounts are protected and cannot be edited or deleted.');
+            $this->redirect('/users');
+        }
 
         $this->view('users/edit', ['title' => 'Edit user', 'user' => $user]);
     }
@@ -83,8 +87,10 @@ final class UserController extends Controller
             }
             (new User())->delete((int) $id);
             $this->flash('success', 'User deleted.');
+        } catch (\InvalidArgumentException $exception) {
+            $this->flash('error', $exception->getMessage());
         } catch (\Throwable $exception) {
-            $this->flash('error', 'Could not delete this user. A user with borrow history cannot be deleted.');
+            $this->flash('error', 'Could not delete this user. A user with borrow history or book requests cannot be deleted.');
         }
         $this->redirect('/users');
     }

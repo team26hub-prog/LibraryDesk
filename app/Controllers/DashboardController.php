@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Core\Database;
 use App\Models\Book;
+use App\Models\BookRequest;
 use App\Models\Borrow;
 
 final class DashboardController extends Controller
@@ -24,6 +25,7 @@ final class DashboardController extends Controller
                 'stats' => $borrows->memberStats($userId),
                 'activeBorrows' => $borrows->memberActive($userId),
                 'availableBooks' => (new Book())->availableForMembers(6),
+                'requestStatuses' => (new BookRequest())->memberStatuses($userId),
             ]);
             return;
         }

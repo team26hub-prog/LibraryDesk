@@ -28,6 +28,9 @@ function icon(string $name): string
         'arrow-right' => '<path d="M5 12h14m-6-6 6 6-6 6"/>',
         'search' => '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
         'plus' => '<path d="M12 5v14M5 12h14"/>',
+        'request' => '<path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l-3 3V11.5A8.5 8.5 0 0 1 9.5 3H21v8.5Z"/><path d="M7 8h8M7 12h6"/>',
+        'eye' => '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+        'eye-off' => '<path d="m3 3 18 18M10.6 5.1A12 12 0 0 1 12 5c6.5 0 10 7 10 7a19 19 0 0 1-3 4M6.5 6.5A20 20 0 0 0 2 12s3.5 7 10 7a12 12 0 0 0 5.5-1.5M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
     ];
 
     if (!isset($shapes[$name])) {
